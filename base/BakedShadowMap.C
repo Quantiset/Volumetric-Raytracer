@@ -29,7 +29,7 @@ void BakedShadowMap::bake(const PointLight& light, const ScalarField& density_fi
                 float smax = (light.position - X).magnitude();
                 Vector direction = (light.position - X).unitvector();
                 double s = 0;
-                if (old_density_field->eval(X) > -0.15f) {
+                if (old_density_field->eval(X) > -3.175f) {
                     while (s < smax) {
                         arg += ds * new_density_field->eval(X);
                         X += direction * ds;
