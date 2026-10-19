@@ -13,6 +13,7 @@ OFILES = base/Matrix.o \
 	 base/Grid.o \
 	 base/BakedShadowMap.o \
 	 base/LevelSet.o \
+	 base/NoiseGenerator.o \
 
 AFILES = $(OFILES)
 

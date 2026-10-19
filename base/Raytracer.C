@@ -5,6 +5,7 @@
 #include "ImplicitColors.h"
 #include "Camera.h"
 #include "Raytracer.h"
+#include "NoiseGenerator.h"
 #include <omp.h>
 #include <chrono>
 
@@ -27,7 +28,6 @@ void Raytracer::write_exr(const vector<Color>& pixels, const Vector& screen_size
     std::snprintf(buf, sizeof(buf), "frame.%03d.exr", frame_number);
     std::string filename_str = buf;
     const char* filename = filename_str.c_str();
-
     vector<float> data(
         static_cast<size_t>(width) *
         static_cast<size_t>(height) *
@@ -128,7 +128,7 @@ void Raytracer::raytrace(const Vector& screen_size, const Camera& camera, const 
     const int height = static_cast<int>(screen_size[1]);
 
     vector<Color> pixels(width * height);
-
+    
     auto before_time = std::chrono::steady_clock::now();
     #pragma omp parallel for collapse(2)
     for (int y = 0; y < height; y++) {
