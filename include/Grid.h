@@ -3,6 +3,7 @@
 #include "Vector.h"
 #include <map>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
@@ -28,6 +29,14 @@ class Grid : public Volume<T>
             grid_data[index(x, y, z)] = value;
         }
     }
+
+    void add( const int x, const int y, const int z, const T& value ) {
+        if (in_range(x, y, z)) {
+            grid_data[index(x, y, z)] += value;
+        }
+    }
+
+    void add( const Vector& P, const T& value );
 
     protected:
 

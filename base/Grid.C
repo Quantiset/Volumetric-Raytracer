@@ -82,6 +82,28 @@ void Grid<T>::stamp( const Volume<T>& volume ) {
     }
 }
 
+template<typename T>
+void Grid<T>::add(const Vector& P, const T& value) {
+    int grid_x = static_cast<int>(floor(P.X() / res));
+    int grid_y = static_cast<int>(floor(P.Y() / res));
+    int grid_z = static_cast<int>(floor(P.Z() / res));
+    int grid_x_next = grid_x + 1;
+    int grid_y_next = grid_y + 1;
+    int grid_z_next = grid_z + 1;
+    float frac_x = P.X() / res - grid_x;
+    float frac_y = P.Y() / res - grid_y;
+    float frac_z = P.Z() / res - grid_z;
+
+    add(grid_x, grid_y, grid_z, value * (1 - frac_x) * (1 - frac_y) * (1 - frac_z));
+    add(grid_x_next, grid_y, grid_z, value * frac_x * (1 - frac_y) * (1 - frac_z));
+    add(grid_x, grid_y_next, grid_z, value * (1 - frac_x) * frac_y * (1 - frac_z));
+    add(grid_x, grid_y, grid_z_next, value * (1 - frac_x) * (1 - frac_y) * frac_z);
+    add(grid_x_next, grid_y_next, grid_z, value * frac_x * frac_y * (1 - frac_z));
+    add(grid_x_next, grid_y, grid_z_next, value * frac_x * (1 - frac_y) * frac_z);
+    add(grid_x, grid_y_next, grid_z_next, value * (1 - frac_x) * frac_y * frac_z);
+    add(grid_x_next, grid_y_next, grid_z_next, value * frac_x * frac_y * frac_z);
+}
+
 template class Grid<float>;
 
 }

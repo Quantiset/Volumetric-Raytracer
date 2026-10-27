@@ -61,6 +61,25 @@ void Raytracer::write_exr(const vector<Color>& pixels, const Vector& screen_size
     cout << "Successfully wrote " << filename << " (frame " << frame_number << ")" << endl;
 }
 
+pair<ScalarField, ColorField> Raytracer::volumes_to_fields(const vector<pair<ScalarField, Color>>& volumes) {
+    ScalarField density_field = new ConstantVolume(-99999.0f);
+    ColorField color_field = new ConstantColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
+    for (int i = 0; i < volumes.size(); ++i) {
+        ScalarField scaled_volume = new MultiplyVolume(volumes[i].first, 100.0f);
+        ScalarField clamped_volume = new ClampVolume(scaled_volume, 0.0f, 1.0f);
+        density_field = new UnionVolume(density_field, scaled_volume);
+        ScalarField inv_mask = new AddVolume(
+            ScalarField(new ConstantVolume(1.0f)),
+            new MultiplyVolume(clamped_volume, -1.0f)
+        );
+        color_field = new AddColor(
+            new MultiplyColor(color_field, inv_mask),
+            new MultiplyColor(new ConstantColor(volumes[i].second), clamped_volume)
+        );
+    }
+    return make_pair(density_field, color_field);
+}
+
 Color Raytracer::raymarch_one_pixel(const Vector& direction, const Camera& camera, const ScalarField& density, const ColorField& color, const vector<PointLight>& lights, const vector<ScalarField>& light_maps, const vector<float>& bounding_box) const {
 
     double T = 1;
@@ -102,7 +121,7 @@ Color Raytracer::raymarch_one_pixel(const Vector& direction, const Camera& camer
         end = std::min(end, tmax);
     }
 
-    double s = start + direction.magnitude() * ds * rand() / RAND_MAX;
+    double s = start + direction.magnitude() * ds;
     Vector X = camera.eye() + direction * s;
     while (s < end && T > 0.01) {
         float den = density->eval(X);
@@ -116,7 +135,7 @@ Color Raytracer::raymarch_one_pixel(const Vector& direction, const Camera& camer
             T *= dT;
         }
         X += direction * ds;
-        s += ds;
+        s += 0.95 * ds + 0.1 * ds * (static_cast<float>(rand()) / RAND_MAX);
     }
     L[3] = 1.0;
     return L;
@@ -149,7 +168,7 @@ void Raytracer::raytrace(const Vector& screen_size, const Camera& camera, const 
     write_exr(pixels, screen_size, frame_number);
 }
 
-void Raytracer::circle_origin(const Vector& screen_size, const Camera& camera, const ScalarField& density, const ColorField& color, const int frames, const vector<PointLight>& lights, const vector<float>& bounding_box) const {
+void Raytracer::circle_origin(const Vector& screen_size, const Camera& camera, const ScalarField& density, const ColorField& color, const vector<int>& frames, const vector<PointLight>& lights, const vector<float>& bounding_box) const {
     
     Camera camera_copy = camera;
 
@@ -170,7 +189,7 @@ void Raytracer::circle_origin(const Vector& screen_size, const Camera& camera, c
     cout << "Time: " << std::chrono::duration_cast<std::chrono::seconds>(after_time - before_time).count() << " seconds for shadow maps" << endl;
 
 
-    for (int i = 0; i < frames; ++i) {
+    for (int i : frames) {
         float angle = i * 3.0f * M_PI / 180.0f;
         camera_copy.setEyeViewUp(Vector(15.0f * sin(angle), -15.0f * cos(angle), 0.0f), Vector(-sin(angle), cos(angle), 0), Vector(0, 0, 1));
         raytrace(screen_size, camera_copy, density_field, color, i, lights, shadow_maps, bounding_box);

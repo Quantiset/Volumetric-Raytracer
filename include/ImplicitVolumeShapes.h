@@ -8,7 +8,8 @@
 #include <vector>
 #include <iostream>
 #include "Grid.h"
-
+#include "NoiseGenerator.h"
+#include <random>
 
 namespace lux
 {
@@ -483,6 +484,71 @@ class ConstantVolume : public Volume<float>
     
       Vector pos;
       float a, b, c;
+
+  };
+
+  class PyroclasticDisplacement : public Volume<float>
+  {
+    public:
+      PyroclasticDisplacement( const ScalarField& field, const ScalarField& noise_gen, float amp ) : amplitude(amp),
+        field(field), noise_generator(noise_gen)
+      {};
+      ~PyroclasticDisplacement(){};
+
+      const float eval( const Vector& P ) const;
+
+      const Vector grad( const Vector& P ) const;
+
+    private:
+      const float amplitude;
+      const ScalarField field;
+      const ScalarField noise_generator;
+
+  };
+
+  class NoiseVolume : public Volume<float>
+  {
+    public:
+      NoiseVolume( const ScalarField& noise_gen ) : noise_generator(noise_gen)
+      {};
+      ~NoiseVolume(){};
+
+      const float eval( const Vector& P ) const;
+
+      const Vector grad( const Vector& P ) const;
+    
+    private:
+      const ScalarField noise_generator;
+
+  };
+
+  class Wisp : public Volume<float>
+  {
+    public:
+      Wisp( const ScalarField& noise_radius, const ScalarField& noise_shift, const int num_children, float pscale, float clump, float density ) : 
+      noise_radius(noise_radius), noise_shift(noise_shift), num_children(num_children), pscale(pscale), clump(clump), density(density)
+      {
+        grid = new Grid<float>(Vector(-4, -4, -4), Vector(4, 4, 4), 0.04f);
+        initialize_grid();
+      };
+      ~Wisp(){};
+
+      const float eval( const Vector& P ) const;
+
+      const Vector grad( const Vector& P ) const;
+
+    private:
+
+      void initialize_grid();
+
+      Grid<float>* grid;
+
+      const ScalarField noise_radius;
+      const ScalarField noise_shift;
+      const int num_children;
+      const float pscale;
+      const float clump;
+      const float density;
 
   };
 

@@ -246,3 +246,46 @@ const Vector SteinerPatch::grad( const Vector& P ) const {
    Vector x = P - pos;
    return x;
 }
+
+const float PyroclasticDisplacement::eval( const Vector& P ) const {
+   Vector on_surface = P - field->eval(P) * field->grad(P);
+   return field->eval(P) + noise_generator->eval(on_surface) * amplitude;
+}
+
+const Vector PyroclasticDisplacement::grad( const Vector& P ) const {
+   Vector on_surface = field->eval(P) * field->grad(P);
+   return field->grad(P);
+}
+
+const float NoiseVolume::eval( const Vector& P ) const {
+   return noise_generator->eval(P);
+}
+
+const Vector NoiseVolume::grad( const Vector& P ) const {
+   return Vector(0, 0, 0);
+}
+
+const float Wisp::eval( const Vector& P ) const {
+   return grid->eval(P);
+}
+
+void Wisp::initialize_grid() {
+   random_device rd;
+   mt19937 gen(rd());
+   uniform_real_distribution<float> dis(-1.0, 1.0);
+
+   for (int i = 0; i < num_children; ++i) {
+      Vector square_point(dis(gen), dis(gen), dis(gen));
+      Vector random_point = square_point / square_point.magnitude();
+      float radius = std::pow(std::abs(noise_radius->eval(square_point)), clump);
+      Vector scaled_pos = radius * random_point * pscale;
+      Vector tmp(0.51, 0.21, 0.92);
+      Vector displacement = Vector(noise_shift->eval(radius * random_point), noise_shift->eval(radius * random_point + tmp), noise_shift->eval(radius * random_point - tmp));
+      Vector p5 = scaled_pos + displacement;
+      grid->add(p5, density);
+   }
+}
+
+const Vector Wisp::grad( const Vector& P ) const {
+   return Vector(0, 0, 0);
+}

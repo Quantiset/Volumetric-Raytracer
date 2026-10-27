@@ -2,11 +2,12 @@
 #include <vector>
 #include <array>
 #include "Vector.h"
+#include "Volume.h"
 
 using namespace lux;
 using namespace std;
 
-class NoiseGenerator
+class NoiseGenerator : public Volume<float>
 {
 public:
 
@@ -15,19 +16,21 @@ public:
     Vector translate;
     float freq;
     float freq_jump;
+    float scale_sample;
 
-    NoiseGenerator(float roughness = 1.0f, float n_octaves = 4.0f, Vector translate = Vector(0.0f, 0.0f, 0.0f), float freq = 1.0f, float freq_jump = 2.0f)
-     : roughness(roughness), n_octaves(n_octaves), translate(translate), freq(freq), freq_jump(freq_jump) {
+    NoiseGenerator(float roughness = 1.0f, float n_octaves = 4.0f, Vector translate = Vector(0.0f, 0.0f, 0.0f), float freq = 1.0f, float freq_jump = 2.0f, float scale_sample = 1.0f)
+     : roughness(roughness), n_octaves(n_octaves), translate(translate), freq(freq), freq_jump(freq_jump), scale_sample(scale_sample) {
     }
     ~NoiseGenerator(){};
-    float noise(Vector point);
-    float perlin(Vector point);
+    float noise(Vector point) const;
+    const float eval(const Vector& P) const override;
+    float perlin(Vector point) const;
 
 
 private:
-    double fade(double t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-    double lerp(double t, double a, double b) { return a + t * (b - a); }
-    double grad(int hash, double x, double y, double z) {
+    double fade(double t) const { return t * t * t * (t * (t * 6 - 15) + 10); }
+    double lerp(double t, double a, double b) const { return a + t * (b - a); }
+    double grad(int hash, double x, double y, double z) const {
         int h = hash & 15;                       // low 4 bits of hash
         double u = h < 8 ? x : y,                // -> 12 gradient directions
                v = h < 4 ? y : (h == 12 || h == 14) ? x : z;

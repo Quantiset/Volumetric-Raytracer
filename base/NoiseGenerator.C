@@ -3,7 +3,7 @@
 
 using namespace std;
 
-float NoiseGenerator::perlin(Vector point) {
+float NoiseGenerator::perlin(Vector point) const {
     float x = point[0];
     float y = point[1];
     float z = point[2];
@@ -29,20 +29,24 @@ float NoiseGenerator::perlin(Vector point) {
                                     grad(p[BB+1], x-1, y-1, z-1 ))));
 }
 
-float NoiseGenerator::noise(Vector point) {
+float NoiseGenerator::noise(Vector point) const {
+    Vector tpoint = point * scale_sample;
+    int floor_octaves = static_cast<int>(n_octaves);
+    float alpha = n_octaves - floor_octaves;
     float mult = 0.0f;
-    for (int i = 0; i < n_octaves; i++) {
+    for (int i = 0; i < floor_octaves; i++) {
         float r = 1.0f;
         float fj = 1.0f;
         for (int j = 0; j < i; j++) {
             r *= roughness;
             fj *= freq_jump;
         }
-        mult += r * perlin((point - translate) * freq * fj);
+        mult += r * perlin((tpoint - translate) * freq * fj);
     }
-    float rno = 1.0f;
-    for (int i = 0; i < n_octaves; i++) {
-        rno *= roughness;
-    }
-    return (1.0f - roughness) * mult / (1.0f - rno);
+    mult += alpha * pow(roughness, n_octaves - 1.0) * perlin((tpoint - translate) * freq * pow(freq_jump, n_octaves - 1.0));
+    return (1.0f - roughness) * mult / (1.0f - pow(roughness, n_octaves));
+}
+
+const float NoiseGenerator::eval(const Vector& P) const {
+    return noise(P);
 }
